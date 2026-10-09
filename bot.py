@@ -205,10 +205,21 @@ async def on_ready():
     print('Бот готов к работе!')
     print(f'Пригласите бота с правами: https://discord.com/api/oauth2/authorize?client_id={bot.user.id}&permissions=274877991936&scope=bot%20applications.commands')
 
+ALLOWED_CHANNEL_ID = 1553135214685855835
+
 @bot.tree.command(name='rust', description='Запустить верификацию для пользователя')
 @app_commands.describe(member='Выберите пользователя для верификации')
 async def rust(interaction: discord.Interaction, member: discord.Member):
     """Slash команда для запуска верификации конкретного пользователя"""
+    
+    # Проверка канала
+    if interaction.channel_id != ALLOWED_CHANNEL_ID:
+        await interaction.response.send_message(
+            "Пошел нахуй",
+            ephemeral=True
+        )
+        return
+    
     embed = discord.Embed(
         title='Rust',
         description='Please select your language',
