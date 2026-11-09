@@ -193,7 +193,7 @@ def create_profile_ui(texts, lang):
         Container(
             MediaGallery(f"attachment://image.jpg"),
             Separator(spacing=SeparatorSpacing.SMALL),
-            TextDisplay(f"# ✅ {texts['connection_established']}"),
+            TextDisplay(f"# {texts['connection_established']}"),
             Separator(divider=False, spacing=SeparatorSpacing.SMALL),
             TextDisplay(f"ℹ️ {texts['send_profile_link']}"),
         ),
