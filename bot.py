@@ -1,10 +1,13 @@
 import discord
 from discord import app_commands
 from discord.ext import commands
-from discord.ui import Button, View, Select
 import os
 import asyncio
 from dotenv import load_dotenv
+from py_components import (
+    UI, Container, TextDisplay, Section, Separator, SeparatorSpacing,
+    MediaGallery, ActionRow, Button, ButtonStyle, StringSelect, SelectOption
+)
 
 # Загрузка переменных окружения
 load_dotenv()
@@ -79,114 +82,117 @@ TEXTS = {
 # Хранилище выбранных языков пользователей
 user_languages = {}
 
-class LanguageSelect(discord.ui.Select):
-    def __init__(self):
-        options = [
-            discord.SelectOption(label='English', description='Choose English language', emoji='🇬🇧', value='en'),
-            discord.SelectOption(label='Русский', description='Выбрать русский язык', emoji='🇷🇺', value='ru'),
-            discord.SelectOption(label='Français', description='Choisir la langue française', emoji='🇫🇷', value='fr'),
-            discord.SelectOption(label='Español', description='Elige el idioma español', emoji='🇪🇸', value='es')
-        ]
-        super().__init__(placeholder='Choose language...', options=options)
+# Глобальный registry для обработки взаимодействий
+from py_components import Registry
+component_registry = Registry()
 
-    async def callback(self, interaction: discord.Interaction):
-        lang = self.values[0]
-        user_languages[interaction.user.id] = lang
-        texts = TEXTS[lang]
-        
-        # Показываем "Подключение к серверам"
-        embed = discord.Embed(
-            title=texts['connecting'],
-            description=texts['please_wait'],
-            color=discord.Color.orange()
-        )
-        
-        image_path = os.path.join('assets', 'image.jpg')
-        if os.path.exists(image_path):
-            file = discord.File(image_path, filename='image.jpg')
-            embed.set_image(url='attachment://image.jpg')
-            await interaction.response.edit_message(embed=embed, attachments=[file], view=None)
-        else:
-            await interaction.response.edit_message(embed=embed, view=None)
-        
-        # Имитация подключения
-        await asyncio.sleep(2)
-        
-        # Показываем успешное подключение
-        view = ProfileView(lang)
-        embed = discord.Embed(
-            title=texts['connection_established'],
-            description=f"ℹ️ {texts['send_profile_link']}",
-            color=discord.Color.green()
-        )
-        
-        if os.path.exists(image_path):
-            file = discord.File(image_path, filename='image.jpg')
-            embed.set_image(url='attachment://image.jpg')
-            await interaction.edit_original_response(embed=embed, attachments=[file], view=view)
-        else:
-            await interaction.edit_original_response(embed=embed, view=view)
-
-class LanguageView(discord.ui.View):
-    def __init__(self):
-        super().__init__(timeout=None)
-        self.add_item(LanguageSelect())
-
-class ProfileView(discord.ui.View):
-    def __init__(self, lang='ru'):
-        super().__init__(timeout=None)
-        self.lang = lang
-        texts = TEXTS[lang]
-        
-        # Кнопка "Отправить"
-        send_button = Button(label=texts['send_button'], style=discord.ButtonStyle.green, custom_id='send_profile')
-        send_button.callback = self.send_callback
-        self.add_item(send_button)
-        
-        # Кнопка "Нет аккаунта"
-        no_account_button = Button(label=texts['no_account'], style=discord.ButtonStyle.red, custom_id='no_account')
-        no_account_button.callback = self.no_account_callback
-        self.add_item(no_account_button)
+@component_registry.route("language_select")
+async def handle_language_select(interaction: discord.Interaction):
+    lang = interaction.data['values'][0]
+    user_languages[interaction.user.id] = lang
+    texts = TEXTS[lang]
     
-    async def send_callback(self, interaction: discord.Interaction):
-        texts = TEXTS[self.lang]
-        await interaction.response.send_message(
-            f"Пожалуйста, отправьте ссылку на ваш профиль Clan table",
-            ephemeral=True
-        )
+    # Показываем "Подключение к серверам"
+    ui = create_connecting_ui(texts)
+    await ui.edit(interaction)
     
-    async def no_account_callback(self, interaction: discord.Interaction):
-        texts = TEXTS[self.lang]
-        view = RegistrationView(self.lang)
-        
-        embed = discord.Embed(
-            title='Rust',
-            description=f"ℹ️ {texts['registration_required']}",
-            color=discord.Color.blue()
-        )
-        
-        image_path = os.path.join('assets', 'image.jpg')
-        if os.path.exists(image_path):
-            file = discord.File(image_path, filename='image.jpg')
-            embed.set_image(url='attachment://image.jpg')
-            await interaction.response.edit_message(embed=embed, attachments=[file], view=view)
-        else:
-            await interaction.response.edit_message(embed=embed, view=view)
+    # Имитация подключения
+    await asyncio.sleep(2)
+    
+    # Показываем успешное подключение
+    ui = create_profile_ui(texts, lang)
+    await ui.edit(interaction)
 
-class RegistrationView(discord.ui.View):
-    def __init__(self, lang='ru'):
-        super().__init__(timeout=None)
-        self.lang = lang
-        texts = TEXTS[lang]
-        
-        # Кнопка "Перейти к регистрации"
-        registration_button = Button(
-            label=texts['go_to_registration'],
-            style=discord.ButtonStyle.link,
-            url=REGISTRATION_URL,
-            emoji='🔗'
-        )
-        self.add_item(registration_button)
+@component_registry.route("send_profile")
+async def handle_send_profile(interaction: discord.Interaction):
+    lang = user_languages.get(interaction.user.id, 'ru')
+    texts = TEXTS[lang]
+    await interaction.response.send_message(
+        texts['send_profile_link'],
+        ephemeral=True
+    )
+
+@component_registry.route("no_account")
+async def handle_no_account(interaction: discord.Interaction):
+    lang = user_languages.get(interaction.user.id, 'ru')
+    texts = TEXTS[lang]
+    ui = create_registration_ui(texts, lang)
+    await ui.edit(interaction)
+
+def create_language_select_ui():
+    """Создает начальное сообщение с выбором языка"""
+    image_path = os.path.join('assets', 'image.jpg')
+    
+    ui = UI(
+        Container(
+            MediaGallery(f"attachment://image.jpg"),
+            Separator(spacing=SeparatorSpacing.SMALL),
+            TextDisplay("# 🛡️ Rust Clan Table"),
+            Separator(divider=False, spacing=SeparatorSpacing.SMALL),
+            TextDisplay("Please select your language"),
+            Separator(spacing=SeparatorSpacing.SMALL),
+            accent_color=0xCD412B,  # Rust orange-red color
+        ),
+        ActionRow(
+            StringSelect(
+                "language_select",
+                options=[
+                    SelectOption("🇬🇧 English", "en", description="Choose English language"),
+                    SelectOption("🇷🇺 Русский", "ru", description="Выбрать русский язык"),
+                    SelectOption("🇫🇷 Français", "fr", description="Choisir la langue française"),
+                    SelectOption("🇪🇸 Español", "es", description="Elige el idioma español"),
+                ],
+                placeholder="Select language...",
+            )
+        ),
+    )
+    
+    return ui
+
+def create_connecting_ui(texts):
+    """Создает сообщение с индикацией подключения"""
+    ui = UI(
+        Container(
+            MediaGallery(f"attachment://image.jpg"),
+            Separator(spacing=SeparatorSpacing.SMALL),
+            TextDisplay(f"# ⏳ {texts['connecting']}"),
+            Separator(divider=False, spacing=SeparatorSpacing.SMALL),
+            TextDisplay(texts['please_wait']),
+            accent_color=0xFFA500,  # Orange
+        ),
+    )
+    return ui
+
+def create_profile_ui(texts, lang):
+    """Создает сообщение с запросом профиля"""
+    ui = UI(
+        Container(
+            MediaGallery(f"attachment://image.jpg"),
+            Separator(spacing=SeparatorSpacing.SMALL),
+            TextDisplay(f"# ✅ {texts['connection_established']}"),
+            Separator(divider=False, spacing=SeparatorSpacing.SMALL),
+            TextDisplay(f"ℹ️ {texts['send_profile_link']}"),
+            accent_color=0x57F287,  # Green
+        ),
+        Button(texts['send_button'], custom_id='send_profile', style=ButtonStyle.SUCCESS),
+        Button(texts['no_account'], custom_id='no_account', style=ButtonStyle.DANGER),
+    )
+    return ui
+
+def create_registration_ui(texts, lang):
+    """Создает сообщение с кнопкой регистрации"""
+    ui = UI(
+        Container(
+            MediaGallery(f"attachment://image.jpg"),
+            Separator(spacing=SeparatorSpacing.SMALL),
+            TextDisplay("# 🔐 Rust Clan Table"),
+            Separator(divider=False, spacing=SeparatorSpacing.SMALL),
+            TextDisplay(f"ℹ️ {texts['registration_required']}"),
+            accent_color=0x5865F2,  # Blurple
+        ),
+        Button(texts['go_to_registration'], style=ButtonStyle.LINK, url=REGISTRATION_URL, emoji='🔗'),
+    )
+    return ui
 
 @bot.event
 async def on_ready():
@@ -206,6 +212,14 @@ async def on_ready():
     print('Бот готов к работе!')
     print(f'Пригласите бота с правами: https://discord.com/api/oauth2/authorize?client_id={bot.user.id}&permissions=274877991936&scope=bot%20applications.commands')
 
+@bot.event
+async def on_interaction(interaction):
+    """Обработка всех взаимодействий с компонентами"""
+    if interaction.type.name == "component":
+        custom_id = interaction.data.get("custom_id")
+        if custom_id:
+            await component_registry.dispatch(custom_id, interaction)
+
 @bot.tree.command(name='rust', description='Запустить верификацию для пользователя')
 @app_commands.describe(member='Выберите пользователя для верификации')
 async def rust(interaction: discord.Interaction, member: discord.Member):
@@ -219,24 +233,18 @@ async def rust(interaction: discord.Interaction, member: discord.Member):
         )
         return
     
-    embed = discord.Embed(
-        title='Rust',
-        description='Please select your language',
-        color=discord.Color.blue()
-    )
-    
-    view = LanguageView()
-    
     image_path = os.path.join('assets', 'image.jpg')
     
     try:
+        # Создаем UI с Components V2
+        ui = create_language_select_ui()
+        
         # Отправляем в личку пользователю
         if os.path.exists(image_path):
             file = discord.File(image_path, filename='image.jpg')
-            embed.set_image(url='attachment://image.jpg')
-            await member.send(embed=embed, file=file, view=view)
+            await ui.send(member, files=[{"fp": file.fp, "filename": "image.jpg", "content_type": "image/jpeg"}])
         else:
-            await member.send(embed=embed, view=view)
+            await ui.send(member)
         
         # Подтверждение в канале
         await interaction.response.send_message(
