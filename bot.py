@@ -95,7 +95,16 @@ async def handle_language_select(interaction: discord.Interaction):
     # Показываем "Подключение к серверам"
     ui = create_connecting_ui(texts)
     payload = ui.to_payload()
-    await interaction.response.edit_message(**payload)
+    
+    # Используем низкоуровневый метод редактирования
+    from py_components import edit_message
+    await interaction.response.defer()
+    await edit_message(
+        interaction.channel_id,
+        interaction.message.id,
+        bot.http.token,
+        payload
+    )
     
     # Имитация подключения
     await asyncio.sleep(2)
@@ -103,7 +112,12 @@ async def handle_language_select(interaction: discord.Interaction):
     # Показываем успешное подключение
     ui = create_profile_ui(texts, lang)
     payload = ui.to_payload()
-    await interaction.edit_original_response(**payload)
+    await edit_message(
+        interaction.channel_id,
+        interaction.message.id,
+        bot.http.token,
+        payload
+    )
 
 @component_registry.route("send_profile")
 async def handle_send_profile(interaction: discord.Interaction):
@@ -120,7 +134,16 @@ async def handle_no_account(interaction: discord.Interaction):
     texts = TEXTS[lang]
     ui = create_registration_ui(texts, lang)
     payload = ui.to_payload()
-    await interaction.response.edit_message(**payload)
+    
+    # Используем низкоуровневый метод редактирования
+    from py_components import edit_message
+    await interaction.response.defer()
+    await edit_message(
+        interaction.channel_id,
+        interaction.message.id,
+        bot.http.token,
+        payload
+    )
 
 def create_language_select_ui():
     """Создает начальное сообщение с выбором языка"""
