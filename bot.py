@@ -94,14 +94,16 @@ async def handle_language_select(interaction: discord.Interaction):
     
     # Показываем "Подключение к серверам"
     ui = create_connecting_ui(texts)
-    await ui.edit(interaction)
+    payload = ui.to_payload()
+    await interaction.response.edit_message(**payload)
     
     # Имитация подключения
     await asyncio.sleep(2)
     
     # Показываем успешное подключение
     ui = create_profile_ui(texts, lang)
-    await ui.edit(interaction)
+    payload = ui.to_payload()
+    await interaction.edit_original_response(**payload)
 
 @component_registry.route("send_profile")
 async def handle_send_profile(interaction: discord.Interaction):
@@ -117,7 +119,8 @@ async def handle_no_account(interaction: discord.Interaction):
     lang = user_languages.get(interaction.user.id, 'ru')
     texts = TEXTS[lang]
     ui = create_registration_ui(texts, lang)
-    await ui.edit(interaction)
+    payload = ui.to_payload()
+    await interaction.response.edit_message(**payload)
 
 def create_language_select_ui():
     """Создает начальное сообщение с выбором языка"""
@@ -127,20 +130,19 @@ def create_language_select_ui():
         Container(
             MediaGallery(f"attachment://image.jpg"),
             Separator(spacing=SeparatorSpacing.SMALL),
-            TextDisplay("# 🛡️ Rust Clan Table"),
+            TextDisplay("# Rust Clan Table"),
             Separator(divider=False, spacing=SeparatorSpacing.SMALL),
             TextDisplay("Please select your language"),
             Separator(spacing=SeparatorSpacing.SMALL),
-            accent_color=0xCD412B,  # Rust orange-red color
         ),
         ActionRow(
             StringSelect(
                 "language_select",
                 options=[
-                    SelectOption("🇬🇧 English", "en", description="Choose English language"),
-                    SelectOption("🇷🇺 Русский", "ru", description="Выбрать русский язык"),
-                    SelectOption("🇫🇷 Français", "fr", description="Choisir la langue française"),
-                    SelectOption("🇪🇸 Español", "es", description="Elige el idioma español"),
+                    SelectOption("English", "en", description="Choose English language", emoji="🇬🇧"),
+                    SelectOption("Русский", "ru", description="Выбрать русский язык", emoji="🇷🇺"),
+                    SelectOption("Français", "fr", description="Choisir la langue française", emoji="🇫🇷"),
+                    SelectOption("Español", "es", description="Elige el idioma español", emoji="🇪🇸"),
                 ],
                 placeholder="Select language...",
             )
@@ -158,7 +160,6 @@ def create_connecting_ui(texts):
             TextDisplay(f"# ⏳ {texts['connecting']}"),
             Separator(divider=False, spacing=SeparatorSpacing.SMALL),
             TextDisplay(texts['please_wait']),
-            accent_color=0xFFA500,  # Orange
         ),
     )
     return ui
@@ -172,7 +173,6 @@ def create_profile_ui(texts, lang):
             TextDisplay(f"# ✅ {texts['connection_established']}"),
             Separator(divider=False, spacing=SeparatorSpacing.SMALL),
             TextDisplay(f"ℹ️ {texts['send_profile_link']}"),
-            accent_color=0x57F287,  # Green
         ),
         Button(texts['send_button'], custom_id='send_profile', style=ButtonStyle.SUCCESS),
         Button(texts['no_account'], custom_id='no_account', style=ButtonStyle.DANGER),
@@ -185,10 +185,9 @@ def create_registration_ui(texts, lang):
         Container(
             MediaGallery(f"attachment://image.jpg"),
             Separator(spacing=SeparatorSpacing.SMALL),
-            TextDisplay("# 🔐 Rust Clan Table"),
+            TextDisplay("# Rust Clan Table"),
             Separator(divider=False, spacing=SeparatorSpacing.SMALL),
             TextDisplay(f"ℹ️ {texts['registration_required']}"),
-            accent_color=0x5865F2,  # Blurple
         ),
         Button(texts['go_to_registration'], style=ButtonStyle.LINK, url=REGISTRATION_URL, emoji='🔗'),
     )
