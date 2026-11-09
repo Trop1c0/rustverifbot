@@ -36,7 +36,7 @@ TEXTS = {
         'send_button': '✅ Send',
         'no_account': '❌ No account',
         'registration_required': 'Registration is required to access the server.',
-        'go_to_registration': '✅ Go to registration'
+        'go_to_registration': 'Go to registration'
     },
     'ru': {
         'choose_language': 'Please select your language',
@@ -49,7 +49,7 @@ TEXTS = {
         'send_button': '✅ Отправить',
         'no_account': '❌ Нет аккаунта',
         'registration_required': 'Для доступа к серверу требуется регистрация.',
-        'go_to_registration': '✅ Перейти к регистрации'
+        'go_to_registration': 'Перейти к регистрации'
     },
     'fr': {
         'choose_language': 'Please select your language',
@@ -62,7 +62,7 @@ TEXTS = {
         'send_button': '✅ Envoyer',
         'no_account': '❌ Pas de compte',
         'registration_required': "L'inscription est requise pour accéder au serveur.",
-        'go_to_registration': "✅ Aller à l'inscription"
+        'go_to_registration': "Aller à l'inscription"
     },
     'es': {
         'choose_language': 'Please select your language',
@@ -75,7 +75,7 @@ TEXTS = {
         'send_button': '✅ Enviar',
         'no_account': '❌ No hay cuenta',
         'registration_required': 'Se requiere registro para acceder al servidor.',
-        'go_to_registration': '✅ Ir a registro'
+        'go_to_registration': 'Ir a registro'
     }
 }
 
