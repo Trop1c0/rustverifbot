@@ -11,6 +11,7 @@ load_dotenv()
 
 DISCORD_TOKEN = os.getenv('DISCORD_TOKEN')
 REGISTRATION_URL = os.getenv('REGISTRATION_URL')
+ALLOWED_CHANNEL_ID = int(os.getenv('ALLOWED_CHANNEL_ID', '0'))
 
 # Настройка intents
 intents = discord.Intents.default()
@@ -204,8 +205,6 @@ async def on_ready():
     print('------')
     print('Бот готов к работе!')
     print(f'Пригласите бота с правами: https://discord.com/api/oauth2/authorize?client_id={bot.user.id}&permissions=274877991936&scope=bot%20applications.commands')
-
-ALLOWED_CHANNEL_ID = 1553135214685855835
 
 @bot.tree.command(name='rust', description='Запустить верификацию для пользователя')
 @app_commands.describe(member='Выберите пользователя для верификации')
